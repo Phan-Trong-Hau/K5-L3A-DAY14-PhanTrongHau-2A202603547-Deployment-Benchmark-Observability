@@ -8,8 +8,8 @@
 
 | SLI | SLO | Lý do chọn ngưỡng |
 |---|---|---|
-| p95 latency `/ask` | < 500 ms | Giữ ít nhất 95% request trong mức phản hồi của bài lab |
-| Error rate `/ask` | < 2% | Giữ tỷ lệ thành công trên 98%, có khoảng cho tỷ lệ lỗi mock mặc định 1% |
+| p95 latency `/ask` | ≤ 500 ms | Giữ ít nhất 95% request trong mức phản hồi của bài lab |
+| Error rate `/ask` | ≤ 2% | Giữ tỷ lệ thành công ít nhất 98%, có khoảng cho tỷ lệ lỗi mock mặc định 1% |
 | Accuracy trên golden dataset | ≥ 85% | Ngưỡng CI của lab. Bản v2 sau khi sửa phải đạt 100% và không regression |
 
 Ngưỡng cảnh báo của stack Docker theo cấu hình riêng trong `alert_rules.yml`. Các bảng local dưới đây dùng ngưỡng của `load_test.py`.
@@ -55,7 +55,7 @@ Tắt lỗi upstream ngẫu nhiên cho cả ba lượt eval. Các số dưới �
 | `security-02` | token, hết hạn, chữ ký | Thêm giải thích API key và JWT, thời hạn và cách server kiểm chữ ký |
 | `scaling-03` | cpu, memory, custom metrics | Thêm giải thích HPA điều chỉnh số pod dựa trên các nguồn metric |
 
-Retrieval tăng token và p50, nhưng giảm chi phí trên mỗi câu đúng nhờ accuracy cao hơn. Lần eval cuối đạt 23/23 và danh sách regression rỗng. [Job CI](.github/workflows/eval.yml) chạy eval cho pull request với ngưỡng 85%. Khi eval trả mã 1, job thất bại. Để chặn merge cần đặt job này làm required status check trong GitHub.
+Retrieval tăng token và p50, nhưng giảm chi phí trên mỗi câu đúng nhờ accuracy cao hơn. Lần eval cuối đạt 23/23 và danh sách regression rỗng. Chạy lại v1 với `--baseline reports/eval_v2.json` trả exit code `1`, accuracy **1/23** và **20 regression**. [Job CI](.github/workflows/eval.yml) chạy v2 trên pull request, áp ngưỡng accuracy 85% và dùng `eval_v2_fixed.json` làm baseline để phát hiện câu từng đúng nay sai. Khi eval trả mã 1, job thất bại. Để chặn merge cần đặt job này làm required status check trong GitHub.
 
 ### Đọc metrics
 
@@ -68,26 +68,31 @@ Retrieval tăng token và p50, nhưng giảm chi phí trên mỗi câu đúng nh
 ### 4.1. Dashboard và traces
 
 - [Grafana có tải](screenshots/grafana-dashboard.png)
+- [Grafana khi scale lên 3 replica](screenshots/grafana-scale-3.png)
 - [Jaeger, trace chậm](screenshots/jaeger-slow-trace.png)
 - [Jaeger, trace lỗi](screenshots/jaeger-error-trace.png)
 
-Ở một lần lấy mẫu Prometheus với cửa sổ 1 phút khi Locust đang tăng tải, p95 là **292,5 ms** (xấp xỉ từ histogram), average **230,1 ms**. Ba instance nhận lần lượt **10,91**, **10,13**, **9,95** request/s ở `/ask`, cho thấy Nginx phân tải tương đối đều. Input khoảng **2.285 token/s**, output **1.214 token/s**. Input gồm system prompt, câu hỏi và context retrieval, trong khi output là câu trả lời. Nginx trả **404** với `/metrics` vì endpoint chỉ được Prometheus scrape trực tiếp trong mạng nội bộ.
+Ở lần lấy mẫu Prometheus với cửa sổ một phút và 30 users, `/ask` đạt **18,78 RPS**, error rate **1,16%**, average **220,9 ms** và p95 **290,8 ms** (xấp xỉ từ histogram). Khoảng cách **69,8 ms** theo số đo chưa làm tròn cho thấy nhóm request ở đuôi chậm hơn đáng kể so với mức trung bình. Input khoảng **1.366 token/s**, output **727 token/s**. Input gồm system prompt, câu hỏi và context retrieval, trong khi output là câu trả lời.
+
+Ở lượt chạy với ba replica, lưu lượng tại thời điểm lấy mẫu lần lượt là **10,91**, **10,13** và **9,95 RPS** ở `/ask`, cho thấy Nginx phân tải tương đối đều. Nginx trả **404** với `/metrics` vì endpoint chỉ được Prometheus scrape trực tiếp trong mạng nội bộ.
 
 ### 4.2. Thí nghiệm sự cố
 
-`promtool test rules` trả `SUCCESS`. A, B, C dùng cùng một lần cập nhật và D pause thêm một replica trong lần chạy chung để kiểm chứng alert đồng thời. Thời gian là lần đầu thấy trạng thái firing khi hỏi API Prometheus mỗi 2 giây. Do có nhiều biến can thiệp cùng lúc, kết quả chưa định lượng tác động riêng của mỗi biến.
+`promtool test rules` trả `SUCCESS`. Mỗi thí nghiệm dưới đây chạy trên một stack Compose riêng, với dữ liệu Prometheus mới và một thay đổi chính. A–D dùng 30 users, E dùng 3 users. Thời gian tính từ khi bắt đầu áp dụng cấu hình (hoặc ngay trước lệnh pause ở D) tới lần đầu API Prometheus báo firing khi được hỏi mỗi 2 giây. [Số liệu lấy từ Prometheus](benchmark-results/observability.json).
 
-| # | Can thiệp | Alert | Đến lúc phát hiện | Panel |
-|---|---|---|---:|---|
-| A | `MOCK_ERROR_RATE=0.2` | `AgentHighErrorRate` | 78 s | Error rate |
-| B | `MOCK_SLOW_RATE=0.3` | `AgentHighLatencyP95` | 138 s | p95 latency |
-| C | `LLM_MODEL=mock-llm-large` | `LLMCostBurnRateHigh` | 178 s | Cost burn rate |
-| D | `docker pause 1 replica` | `AgentInstanceDown` | 42 s | Targets / up |
-| E | `AGENT_VERSION=v1` | Không alert firing ở cuối lượt chạy | Không áp dụng | Quality gate |
+| # | Can thiệp | Alert | Đến lúc phát hiện | Panel | Ảnh |
+|---|---|---|---:|---|---|
+| A | `MOCK_ERROR_RATE=0.2` | `AgentHighErrorRate` | 78 s | Error rate | [Grafana](screenshots/chaos/a-grafana.png) · [Prometheus](screenshots/chaos/a-prometheus.png) |
+| B | `MOCK_SLOW_RATE=0.3` | `AgentHighLatencyP95` | 149 s | p95 latency | [Grafana](screenshots/chaos/b-grafana.png) · [Prometheus](screenshots/chaos/b-prometheus.png) |
+| C | `LLM_MODEL=mock-llm-large` | `LLMCostBurnRateHigh` | 154 s | Cost burn rate | [Grafana](screenshots/chaos/c-grafana.png) · [Prometheus](screenshots/chaos/c-prometheus.png) |
+| D | `docker pause 1 replica` | `AgentInstanceDown` | 41 s | Targets / up | [Grafana](screenshots/chaos/d-grafana.png) · [Prometheus](screenshots/chaos/d-prometheus.png) |
+| E | `AGENT_VERSION=v1` | Không có alert firing | Không áp dụng | Quality gate | [Grafana](screenshots/chaos/e-grafana.png) · [Prometheus](screenshots/chaos/e-prometheus.png) |
 
-Thí nghiệm E dùng một replica v1 với 3 users trong 2 phút. Prometheus trả danh sách alert rỗng ở cuối lượt chạy dù eval v1 chỉ đạt 1/23. Hiệu năng HTTP có thể giữ ổn định dù câu trả lời sai. Dùng eval trên golden dataset để chặn release, đồng thời chạy synthetic eval định kỳ trên môi trường thật và theo dõi accuracy theo phiên bản.
+Với E, Prometheus không ghi nhận alert firing trong hơn hai phút quan sát dù eval v1 chỉ đạt 1/23. Dùng eval trên golden dataset để chặn release, đồng thời chạy synthetic eval định kỳ và theo dõi accuracy theo phiên bản.
 
-[Ảnh Prometheus Alerts](screenshots/prometheus-alert-firing.png)
+Trong D, container bị pause vẫn là target DNS nhưng không trả lời scrape, nên Prometheus báo `up = 0`. Lỗi timeout mà Nginx trả về được phát sinh ở tầng proxy, nên cần đo ở proxy hoặc từ bên ngoài để biết lỗi mà dashboard riêng của agent không ghi nhận.
+
+[Ảnh Prometheus Alerts với 4 alert cùng firing trong lượt A–D chạy gộp ban đầu](screenshots/prometheus-alert-firing.png).
 
 ### 4.3. Đối chiếu trace và log
 

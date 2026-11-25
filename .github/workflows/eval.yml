@@ -27,4 +27,5 @@ jobs:
           trap 'kill "$agent_pid" 2>/dev/null || true' EXIT
           curl --fail --silent --show-error --retry 15 --retry-connrefused --retry-delay 1 \
             http://127.0.0.1:8002/health || { cat /tmp/day14-agent.log; exit 1; }
-          python eval/run_eval.py --url http://127.0.0.1:8002 --min-accuracy 0.85
+          python eval/run_eval.py --url http://127.0.0.1:8002 --min-accuracy 0.85 \
+            --baseline ../../../reports/eval_v2_fixed.json

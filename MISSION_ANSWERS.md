@@ -25,6 +25,8 @@
 | Vòng đời | Chạy với reload | FastAPI lifespan | Có điểm để khởi tạo và dọn tài nguyên |
 | Health | Thiếu endpoint riêng | `/health`, `/ready` | Điều phối restart và traffic theo tín hiệu phù hợp |
 
+Ví dụ cụ thể về cấu hình secret: bản develop gán trực tiếp `OPENAI_API_KEY` trong [app.py, dòng 17](01-localhost-vs-production/develop/app.py#L17). Bản production đọc biến môi trường cùng tên trong [config.py, dòng 27](01-localhost-vs-production/production/config.py#L27).
+
 ## Part 2 — Docker
 
 ### 2.1. Dockerfile cơ bản
@@ -50,6 +52,12 @@ Client -> Nginx -> FastAPI agent
 ```
 
 Compose cấp DNS theo tên service. Nginx chuyển tiếp sang `agent:8000`. Agent nhận URL Redis và Qdrant qua env. `GET /health` qua Nginx trả `200`, `POST /ask` với JSON cũng trả `200` và nội dung mock về Docker. Bản basic dùng query parameter `question`; gửi JSON vào bản basic trả `422`.
+
+Chạy lại bản basic trong Docker và gửi `POST /ask?question=What%20is%20Docker%3F` nhận được HTTP `200` với response sau:
+
+```json
+{"answer":"Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!"}
+```
 
 ## Part 3 — Cloud Deployment
 
@@ -125,3 +133,4 @@ Total messages: 10
 
 - Yêu cầu AI đọc repo, tóm tắt và triển khai toàn bộ lab. AI hỗ trợ viết agent, cấu hình Docker/cloud, sửa hai mục knowledge base và thu kết quả từ các lệnh chạy trong workspace.
 - AI kiểm tra bằng script chấm đầy đủ với Docker, chạy curl, test stateless, eval và load test, rồi triển khai lên Render sau khi người dùng cấp phiên đăng nhập. Các kết quả trong báo cáo lấy từ lần chạy này. Trước khi nộp, người làm bài cần tự chạy lại và bổ sung vào mục này những phần đã tự sửa hoặc tự xác minh.
+- Yêu cầu AI rà toàn bộ tài liệu Markdown và bổ sung bằng chứng còn thiếu. AI đối chiếu JSON/CSV với báo cáo, chạy lại ví dụ Docker basic và thử quality gate khi hạ từ v2 xuống v1.

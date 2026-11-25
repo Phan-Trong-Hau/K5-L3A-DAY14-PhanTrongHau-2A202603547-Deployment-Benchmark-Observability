@@ -33,6 +33,6 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST "$BASE/ask" \
 
 ## Ảnh
 
-- [Trạng thái deploy](screenshots/dashboard.png), ảnh từ output Render CLI. Dashboard web cần phiên đăng nhập riêng.
+- [Trạng thái deploy](screenshots/dashboard.png), ảnh chụp trực tiếp trang Deploys của Render Dashboard, hiển thị trạng thái Live và commit đang chạy.
 - [Endpoint public đang chạy](screenshots/running.png), ảnh trực tiếp từ trình duyệt.
 - [Kết quả kiểm tra HTTP](screenshots/test.png), ảnh từ output kiểm tra endpoint public.

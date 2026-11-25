@@ -147,3 +147,28 @@ cd benchmark-observability
 | `production/` | Docker Compose: agent x2 + Nginx + Prometheus + Grafana + Jaeger + Locust, 4 alert rules |
 
 Hướng dẫn đầy đủ: [benchmark-observability/README.md](benchmark-observability/README.md). Nộp kèm `BENCHMARK_REPORT.md` theo [mẫu](benchmark-observability/BENCHMARK_REPORT_TEMPLATE.md).
+
+## Mở rộng Part 6
+
+Chạy ba replica sau Nginx từ thư mục `06-lab-complete/`. Cần Docker Compose hỗ trợ `!reset`. Lệnh bên dưới dùng key ví dụ cho máy local.
+
+```bash
+export AGENT_API_KEY=dev-key
+docker compose -p day14-bonus -f docker-compose.yml -f compose.scale.yml up -d --build --scale agent=3
+```
+
+Nginx lắng nghe cổng `8080` (đổi bằng `NGINX_PORT`), còn các replica dùng chung Redis. Kiểm tra header `X-Served-By` để thấy replica đã xử lý mỗi lượt gọi.
+
+```bash
+curl -si http://localhost:8080/ask -H "X-API-Key: $AGENT_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"session_id":"demo","question":"What is Docker?"}'
+curl -iN http://localhost:8080/ask/stream -H "X-API-Key: $AGENT_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"session_id":"demo","question":"What was my previous question?"}'
+curl -sS http://localhost:8080/sessions/demo/history -H "X-API-Key: $AGENT_API_KEY"
+```
+
+`session_id` là tuỳ chọn và `user_id` được dùng khi thiếu `session_id`. Redis lưu tối đa 20 lượt đã hoàn tất mỗi phiên và hết hạn sau 24 giờ kể từ lượt mới nhất. Dùng ID riêng cho từng phiên nếu nhiều người dùng chia sẻ cùng key. Mock hỗ trợ hỏi lại câu trước. Stream trả văn bản theo cụm từ sau khi mock sinh xong câu trả lời, tính chi phí và lưu lượt hỏi. Các request đồng thời có thể đọc cùng một lượt trước đó, và lịch sử được ghi theo thứ tự hoàn tất.
+
+```bash
+docker compose -p day14-bonus -f docker-compose.yml -f compose.scale.yml down
+```

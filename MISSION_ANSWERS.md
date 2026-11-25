@@ -135,6 +135,8 @@ Total messages: 10
 - AI kiểm tra bằng script chấm đầy đủ với Docker, chạy curl, test stateless, eval và load test, rồi triển khai lên Render sau khi người dùng cấp phiên đăng nhập. Các kết quả trong báo cáo lấy từ lần chạy này.
 - Yêu cầu AI rà toàn bộ tài liệu Markdown và bổ sung bằng chứng còn thiếu. AI đối chiếu JSON/CSV với báo cáo, chạy lại ví dụ Docker basic và thử quality gate khi hạ từ v2 xuống v1.
 
+- Yêu cầu AI thực hiện ba mục mở rộng Part 6 trên nhánh riêng. AI thêm lịch sử Redis, endpoint streaming và cấu hình Nginx cho ba replica. AI chạy lại script chấm (PASS 12/12) và kiểm thử ba replica dùng chung lịch sử, stream trả từng cụm từ, xác thực trả 401 và rate limit dùng chung trả 429.
+
 ### Tự kiểm tra
 
 - Tôi mở Render Dashboard, xác nhận service `day14-agent` ở trạng thái **Deploy succeeded | Live** và chụp lại màn hình. [Ảnh Render Dashboard](screenshots/dashboard.png)

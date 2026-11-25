@@ -18,13 +18,22 @@ MOCK_RESPONSES = {
 }
 
 
-def ask(question: str, delay: float = 0.1) -> str:
+def ask(question: str, delay: float = 0.1, *, previous_question: str | None = None) -> str:
     """
     Mock LLM call với delay giả lập latency thật.
     """
     time.sleep(delay + random.uniform(0, 0.05))  # simulate API latency
 
     question_lower = question.lower()
+    if question_lower.strip().rstrip("?") in {
+        "what did i just say",
+        "what was my previous question",
+        "câu hỏi trước của tôi là gì",
+    }:
+        if previous_question is None:
+            return "Chưa có câu hỏi trước trong phiên này."
+        return f"Câu hỏi trước của bạn: {previous_question}"
+
     for keyword, responses in MOCK_RESPONSES.items():
         if keyword in question_lower:
             return random.choice(responses)

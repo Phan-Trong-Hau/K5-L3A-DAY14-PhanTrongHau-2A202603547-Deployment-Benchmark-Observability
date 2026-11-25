@@ -132,5 +132,11 @@ Total messages: 10
 ## AI log
 
 - Yêu cầu AI đọc repo, tóm tắt và triển khai toàn bộ lab. AI hỗ trợ viết agent, cấu hình Docker/cloud, sửa hai mục knowledge base và thu kết quả từ các lệnh chạy trong workspace.
-- AI kiểm tra bằng script chấm đầy đủ với Docker, chạy curl, test stateless, eval và load test, rồi triển khai lên Render sau khi người dùng cấp phiên đăng nhập. Các kết quả trong báo cáo lấy từ lần chạy này. Trước khi nộp, người làm bài cần tự chạy lại và bổ sung vào mục này những phần đã tự sửa hoặc tự xác minh.
+- AI kiểm tra bằng script chấm đầy đủ với Docker, chạy curl, test stateless, eval và load test, rồi triển khai lên Render sau khi người dùng cấp phiên đăng nhập. Các kết quả trong báo cáo lấy từ lần chạy này.
 - Yêu cầu AI rà toàn bộ tài liệu Markdown và bổ sung bằng chứng còn thiếu. AI đối chiếu JSON/CSV với báo cáo, chạy lại ví dụ Docker basic và thử quality gate khi hạ từ v2 xuống v1.
+
+### Tự kiểm tra
+
+- Tôi mở Render Dashboard, xác nhận service `day14-agent` ở trạng thái **Deploy succeeded | Live** và chụp lại màn hình. [Ảnh Render Dashboard](screenshots/dashboard.png)
+- Tôi mở endpoint `GET /health` trên URL public và nhận `{"status":"ok"}`. [Kết quả health](https://day14-agent.onrender.com/health)
+- Tôi mở endpoint `GET /ready` trên URL public và nhận `{"ready":true}`. [Kết quả readiness](https://day14-agent.onrender.com/ready)

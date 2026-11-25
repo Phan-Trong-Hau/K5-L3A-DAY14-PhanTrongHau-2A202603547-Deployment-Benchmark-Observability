@@ -119,10 +119,10 @@ Kẹt quá 10 phút ở một mốc: gọi Lab Coach, ghi lại lỗi, rồi đi
 
   ```bash
   docker compose -p k5-day14-observability up -d --build --scale agent=1
-  docker compose -p k5-day14-observability run --rm locust -f /mnt/locust/locustfile.py --host http://nginx \
+  docker compose -p k5-day14-observability run --rm --no-deps locust -f /mnt/locust/locustfile.py --host http://nginx \
     --headless -u 100 -r 10 -t 2m --csv /mnt/results/scale_1
   docker compose -p k5-day14-observability up -d --scale agent=3
-  docker compose -p k5-day14-observability run --rm locust -f /mnt/locust/locustfile.py --host http://nginx \
+  docker compose -p k5-day14-observability run --rm --no-deps locust -f /mnt/locust/locustfile.py --host http://nginx \
     --headless -u 100 -r 10 -t 2m --csv /mnt/results/scale_3
   ```
 

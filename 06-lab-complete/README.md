@@ -88,7 +88,7 @@ cp .env.example .env
 # Chạy nhanh không cần Docker (cần Redis riêng nếu muốn test rate limit thật)
 AGENT_API_KEY=dev-key uvicorn app.main:app --reload
 
-# Chạy cả agent + redis
+# Đặt AGENT_API_KEY=dev-key trong .env cho ví dụ local bên dưới
 docker compose up --build
 
 curl http://localhost:8000/health
@@ -127,7 +127,7 @@ railway up
 railway domain        # nhận public URL
 ```
 
-**Render:** push repo lên GitHub → Render Dashboard → New → Blueprint → chọn repo (Render đọc `render.yaml`) → điền secret → Deploy.
+**Render:** push repo lên GitHub → Render Dashboard → New → Blueprint → chọn repo (chọn Blueprint Path `06-lab-complete/render.yaml`) → điền secret → Deploy.
 
 Sau khi deploy: `python check_production_ready.py --public-url <URL>` và ghi URL vào `DEPLOYMENT.md` (xem [DAY14_DELIVERY_CHECKLIST.md](../DAY14_DELIVERY_CHECKLIST.md)).
 
